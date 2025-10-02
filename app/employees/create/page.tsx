@@ -46,26 +46,27 @@ export default function AddEmployeePage() {
     }
   };
 
-  const handleAddEmp = async () => {
-    const fromData = new FormData();
-    fromData.append("name", form.name);
-    fromData.append("dateOfBirth", form.dateOfBirth);
-    fromData.append("email", form.email);
-    fromData.append("phone", form.phone);
-    fromData.append("salary", form.salary.toString());
-    fromData.append("departmentId", form.departmentId.toString());
-    fromData.append("position", form.position);
+  const handleAddEmp = async (e: React.FormEvent) => {  // Add event parameter
+  e.preventDefault();  // Add this line
+    const formData = new FormData();
+    formData.append("name", form.name);
+    formData.append("dateOfBirth", form.dateOfBirth);
+    formData.append("email", form.email);
+    formData.append("phone", form.phone);
+    formData.append("salary", form.salary.toString());
+    formData.append("departmentId", form.departmentId.toString());
+    formData.append("position", form.position);
     if (form.profilePic) {
-      fromData.append("profilePic", form.profilePic);
+      formData.append("profilePic", form.profilePic);
     }
     try {
-      const res = await fetch("/api/employee", {
+      const res = await fetch("/api/employees", {
         method: "POST",
-        body: fromData,
+        body: formData,
       });
       const data = await res.json();
       if (res.ok) {
-        router.push("/employee");
+        router.push("/employees");
       } else {
         setError(data.error);
       }
@@ -102,7 +103,7 @@ export default function AddEmployeePage() {
 
           {/* Form Card */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <form className="p-8">
+            <form className="p-8" onSubmit={handleAddEmp}>
               {/* Personal Information Section */}
               <div className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">
@@ -326,13 +327,13 @@ export default function AddEmployeePage() {
               {/* Action Buttons */}
               <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
                 <button
+                 onClick={() => router.push("/employees")}
                   type="button"
                   className="px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleAddEmp}
                   type="submit"
                   className="px-6 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition shadow-sm"
                 >
