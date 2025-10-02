@@ -1,11 +1,71 @@
 "use client";
 import { LiaEdit } from "react-icons/lia";
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import type { DepartmentUpdate, Department } from "../types/type";
 
-const DepartmentUpdate = () => {
+interface DepatmentProp {
+  departmentId: number;
+  updateDepartment: (id: number, updateDepartment: Department) => void
+}
+
+const DepartmentUpdate = ({ departmentId, updateDepartment }: DepatmentProp) => {
   const [error, setError] = useState<null | string>(null);
   const [isOpen, setIsOpen] = useState(false);
+  // const [department, setDepartment] = useState<DepartmentUpdate | null>(null);
+  const [form, setForm] = useState<DepartmentUpdate>({
+    name: "",
+    location: "",
+  });
+  const id = departmentId;
+
+  useEffect(() => {
+    const fetchDepartment = async () => {
+      try {
+        const res = await fetch(`/api/department/${id}`);
+        const data = await res.json();
+        setForm({
+          name: data?.name ?? "",
+          location: data?.location ?? "",
+        });
+      } catch (error) {
+        console.error("can not fetch department", error);
+      }
+    };
+    if (isOpen) {
+      fetchDepartment();
+    }
+  }, [id, isOpen]);
+
+  const hanldeClose = () => {
+    setIsOpen(false)
+    setForm({
+      name: '',
+      location: ''
+    })
+  }
+
+    const hanldeUpdate = async () => {
+    try {
+      const res = await fetch(`/api/department/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify( form ),
+      });
+      const data = await res.json()
+      if (res.ok) {
+        hanldeClose()
+        updateDepartment?.(id, data)
+      } else{
+        setError(data.error)
+      }
+    } catch (error) {
+      console.error("error on update department", error);
+      setError(
+        error instanceof Error ? error.message : "Network error occurred"
+      );
+    }
+  };
 
   return (
     <div>
@@ -18,7 +78,7 @@ const DepartmentUpdate = () => {
       </button>
 
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-4 animate-in fade-in duration-200"
           onClick={() => setIsOpen(false)} // ADD THIS - Close when clicking backdrop
         >
@@ -78,22 +138,11 @@ const DepartmentUpdate = () => {
             <div className="px-6 py-6 space-y-5">
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <svg
-                    className="w-4 h-4 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                    />
-                  </svg>
                   Department Name
                 </label>
                 <input
+                  value={form.name ?? ""}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
                   type="text"
                   placeholder="e.g., Human Resources"
                   className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:outline-none hover:border-gray-300"
@@ -102,28 +151,13 @@ const DepartmentUpdate = () => {
 
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <svg
-                    className="w-4 h-4 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
                   Location
                 </label>
                 <input
+                  value={form.location ?? ""}
+                  onChange={(e) =>
+                    setForm({ ...form, location: e.target.value })
+                  }
                   type="text"
                   placeholder="e.g., New York Office"
                   className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:outline-none hover:border-gray-300"
@@ -134,12 +168,14 @@ const DepartmentUpdate = () => {
             {/* Footer */}
             <div className="px-6 pb-6 flex gap-3">
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={hanldeClose}
                 className="flex-1 rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-50 hover:border-gray-300 active:scale-95"
               >
                 Cancel
               </button>
-              <button className="flex-1 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200">
+              <button 
+                onClick={hanldeUpdate}
+                className="flex-1 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200">
                 Update Department
               </button>
             </div>

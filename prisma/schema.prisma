@@ -27,6 +27,8 @@ model Employee {
   salary       Int
   phone        String     @unique
   email        String     @unique
+  position     String
+  dateOfBirth  String
   profilePic   String?    @db.LongText
   departmentId Int
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)

@@ -1,9 +1,13 @@
 "use client";
-import { errorMonitor } from "events";
 import React from "react";
 import { useState } from "react";
+import { Department } from "../types/type";
 
-const DepartmentAdd = () => {
+interface DepartmentProp  {
+  onAddDepartment?: (newDpt: Department) => void
+}
+
+const DepartmentAdd = ({onAddDepartment}: DepartmentProp) => {
   const [error, setError] = useState<null | string>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [form, setForm] = useState({
@@ -29,6 +33,7 @@ const DepartmentAdd = () => {
       const data = await res.json()
       if (res.ok) {
         hanldeClose()
+        onAddDepartment?.(data)
       } else{
         setError(data.error)
       }

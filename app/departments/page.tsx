@@ -7,20 +7,39 @@ import { useEffect, useState } from "react";
 import { Department } from "../types/type";
 
 export default function DepartmentsPage() {
-  const [department, setDepartment] = useState<Department[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
 
-  // useEffect(() => {
-  //   const fetchDepartment = async () => {
-  //     try {
-  //       const res = await fetch('/api/department')
-  //       const data = await res.json()
-  //       setDepartment(data)
-  //     } catch (error) {
-  //       console.error("can not fetch department", error);
-  //     }
-  //   };
-  //   fetchDepartment();
-  // }, []);
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await fetch("/api/department");
+        const data = await res.json();
+        setDepartments(data);
+      } catch (error) {
+        console.error("can not fetch department", error);
+      }
+    };
+    fetchDepartments();
+  }, []);
+
+  const updateDepartment = async (id: number, updateDepartment: Department) => {
+    setDepartments((prev) =>
+      prev.map((department) =>
+        department.id === id ? { ...prev, ...updateDepartment } : department
+      )
+    );
+  };
+
+  const handleDelete = async (id: number) => {
+    try{
+      await fetch(`/api/department/${id}`,{
+        method: 'DELETE',
+      })
+      setDepartments(departments.filter((department) => department.id !== id))
+    } catch(error){
+      console.error('can not delete department', error);
+    }
+  }
 
   return (
     <div
@@ -38,7 +57,11 @@ export default function DepartmentsPage() {
               <p className="text-[#111418] tracking-light text-[32px] font-bold leading-tight min-w-72">
                 Departments
               </p>
-              <DepartmentAdd />
+              <DepartmentAdd
+                onAddDepartment={(newDpt) =>
+                  setDepartments((prev) => [newDpt, ...prev])
+                }
+              />
             </div>
 
             {/* Table */}
@@ -62,13 +85,13 @@ export default function DepartmentsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {department.map((dept) => (
+                    {departments.map((dept) => (
                       <tr key={dept.id} className="border-t border-t-[#dbe0e6]">
                         <td className="table-column-120 h-[72px] px-4 py-2 w-[400px] text-[#111418] text-sm font-normal leading-normal">
                           {dept.name}
                         </td>
                         <td className="table-column-240 h-[72px] px-4 py-2 w-[400px] text-[#617589] text-sm font-normal leading-normal">
-                          {dept.createAt}
+                          {new Date(dept.createdAt).toLocaleDateString()}
                         </td>
                         <td className="table-column-360 h-[72px] px-4 py-2 w-[400px] text-[#617589] text-sm font-normal leading-normal">
                           {dept.location}
@@ -76,8 +99,13 @@ export default function DepartmentsPage() {
 
                         <td className="px-4 py-2 text-[#617589] text-sm font-bold">
                           <div className="flex items-center gap-2">
-                            <DepartmentUpdate />
-                            <button className="inline-flex cursor-pointer items-center text-sm px-3 py-1.5 font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 hover:border-red-300 outline-none  transition-all duration-150">
+                            <DepartmentUpdate 
+                              departmentId={dept.id} 
+                              updateDepartment={updateDepartment}
+                            />
+                            <button 
+                              onClick={() => handleDelete(dept.id)}
+                              className="inline-flex cursor-pointer items-center text-sm px-3 py-1.5 font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 hover:border-red-300 outline-none  transition-all duration-150">
                               <MdDeleteOutline size={20} />
                               Delete
                             </button>

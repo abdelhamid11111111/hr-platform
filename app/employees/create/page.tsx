@@ -1,122 +1,345 @@
-import Sidebar from '../../components/SideBar';
+"use client";
+import { useState, useEffect } from "react";
+import Sidebar from "../../components/SideBar";
+import { DptInEmpForm } from "@/app/types/type";
+import { useRouter } from "next/navigation";
 
 export default function AddEmployeePage() {
+  const [departments, setDepartments] = useState<DptInEmpForm[]>([]);
+  const [imagePreview, setImagePreview] = useState<null | string>(null);
+  const [error, setError] = useState<null | string>(null);
+  const router = useRouter();
+  const [form, setForm] = useState({
+    name: "",
+    dateOfBirth: "",
+    email: "",
+    phone: "",
+    profilePic: null as File | null,
+    salary: 0,
+    departmentId: 0,
+    position: "",
+  });
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await fetch("/api/department");
+        const data = await res.json();
+        setDepartments(data);
+      } catch (error) {
+        console.error("can not fetch department", error);
+      }
+    };
+    fetchDepartments();
+  }, []);
+
+  const handleImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setForm({ ...form, profilePic: file });
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddEmp = async () => {
+    const fromData = new FormData();
+    fromData.append("name", form.name);
+    fromData.append("dateOfBirth", form.dateOfBirth);
+    fromData.append("email", form.email);
+    fromData.append("phone", form.phone);
+    fromData.append("salary", form.salary.toString());
+    fromData.append("departmentId", form.departmentId.toString());
+    fromData.append("position", form.position);
+    if (form.profilePic) {
+      fromData.append("profilePic", form.profilePic);
+    }
+    try {
+      const res = await fetch("/api/employee", {
+        method: "POST",
+        body: fromData,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        router.push("/employee");
+      } else {
+        setError(data.error);
+      }
+    } catch (error) {
+      console.error("error to add employee", error);
+    }
+  };
+
   return (
-    <div
-      className="relative flex h-auto min-h-screen w-full flex-col bg-white group/design-root overflow-x-hidden"
-    //   style={{
-    //     "--select-button-svg": "url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724px%27 height=%2724px%27 fill=%27rgb(97,117,137)%27 viewBox=%270 0 256 256%27%3e%3cpath d=%27M181.66,170.34a8,8,0,0,1,0,11.32l-48,48a8,8,0,0,1-11.32,0l-48-48a8,8,0,0,1,11.32-11.32L128,212.69l42.34-42.35A8,8,0,0,1,181.66,170.34Zm-96-84.68L128,43.31l42.34,42.35a8,8,0,0,0,11.32-11.32l-48-48a8,8,0,0,0-11.32,0l-48,48A8,8,0,0,0,85.66,85.66Z%27%3e%3c/path%3e%3c/svg%3e')",
-    //     fontFamily: 'Inter, "Noto Sans", sans-serif'
-    //   }}
-    >
-      <div className="layout-container flex h-full grow flex-col">
-        <div className="gap-1 px-6 flex flex-1 justify-center py-5">
-          <div className="layout-content-container flex flex-col w-80">
-            <Sidebar />
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <div className="w-64 fixed h-full">
+        <Sidebar />
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 ml-64">
+        <div className="max-w-4xl mx-auto px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Add New Employee
+            </h1>
+            <p className="mt-2 text-gray-600">
+              Fill in the details to add a new employee to the system
+            </p>
           </div>
 
-           <div className="flex-1 ml-80 flex flex-col px-6 py-5">
-            <div className="flex flex-wrap justify-between gap-3 p-4">
-              <p className="text-[#111418] tracking-light text-[32px] font-bold leading-tight min-w-72">
-                Add Employee
-              </p>
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 text-sm font-medium">{error}</p>
             </div>
+          )}
 
-            {/* Full Name */}
-            <div className="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label className="flex flex-col min-w-40 flex-1">
-                <p className="text-[#111418] text-base font-medium leading-normal pb-2">Full Name</p>
-                <input
-                  placeholder="Enter full name"
-                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#111418] focus:outline-0 focus:ring-0 border border-[#dbe0e6] bg-white focus:border-[#dbe0e6] h-14 placeholder:text-[#617589] p-[15px] text-base font-normal leading-normal"
-                />
-              </label>
-            </div>
+          {/* Form Card */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <form className="p-8">
+              {/* Personal Information Section */}
+              <div className="mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">
+                  Personal Information
+                </h2>
 
-            {/* Profile Picture */}
-            <div className="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label className="flex flex-col min-w-40 flex-1">
-                <p className="text-[#111418] text-base font-medium leading-normal pb-2">Profile Picture</p>
-                <input
-                  placeholder="Upload profile picture"
-                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#111418] focus:outline-0 focus:ring-0 border border-[#dbe0e6] bg-white focus:border-[#dbe0e6] h-14 placeholder:text-[#617589] p-[15px] text-base font-normal leading-normal"
-                />
-              </label>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Full Name */}
+                  <div>
+                    <label
+                      htmlFor="fullName"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={form.name}
+                      onChange={(e) =>
+                        setForm({ ...form, name: e.target.value })
+                      }
+                      type="text"
+                      id="fullName"
+                      name="fullName"
+                      placeholder="John Doe"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    />
+                  </div>
 
-            {/* Position */}
-            <div className="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label className="flex flex-col min-w-40 flex-1">
-                <p className="text-[#111418] text-base font-medium leading-normal pb-2">Position</p>
-                <input
-                  placeholder="Enter position"
-                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#111418] focus:outline-0 focus:ring-0 border border-[#dbe0e6] bg-white focus:border-[#dbe0e6] h-14 placeholder:text-[#617589] p-[15px] text-base font-normal leading-normal"
-                />
-              </label>
-            </div>
+                  {/* Date of Birth */}
+                  <div>
+                    <label
+                      htmlFor="dateOfBirth"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Date of Birth <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={form.dateOfBirth}
+                      onChange={(e) =>
+                        setForm({ ...form, dateOfBirth: e.target.value })
+                      }
+                      type="date"
+                      id="dateOfBirth"
+                      name="dateOfBirth"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    />
+                  </div>
 
-            {/* Department */}
-            <div className="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label className="flex flex-col min-w-40 flex-1">
-                <p className="text-[#111418] text-base font-medium leading-normal pb-2">Department</p>
-                <select className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#111418] focus:outline-0 focus:ring-0 border border-[#dbe0e6] bg-white focus:border-[#dbe0e6] h-14 bg-[image:--select-button-svg] placeholder:text-[#617589] p-[15px] text-base font-normal leading-normal">
-                  <option value="one">Select department</option>
-                  <option value="two">two</option>
-                  <option value="three">three</option>
-                </select>
-              </label>
-            </div>
+                  {/* Email */}
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={form.email}
+                      onChange={(e) =>
+                        setForm({ ...form, email: e.target.value })
+                      }
+                      type="email"
+                      id="email"
+                      name="email"
+                      placeholder="john.doe@company.com"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    />
+                  </div>
 
-            {/* Date of Birth */}
-            <div className="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label className="flex flex-col min-w-40 flex-1">
-                <p className="text-[#111418] text-base font-medium leading-normal pb-2">Date of Birth</p>
-                <input
-                  placeholder="Select date"
-                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#111418] focus:outline-0 focus:ring-0 border border-[#dbe0e6] bg-white focus:border-[#dbe0e6] h-14 placeholder:text-[#617589] p-[15px] text-base font-normal leading-normal"
-                />
-              </label>
-            </div>
+                  {/* Phone Number */}
+                  <div>
+                    <label
+                      htmlFor="phone"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Phone Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={form.phone}
+                      onChange={(e) =>
+                        setForm({ ...form, phone: e.target.value })
+                      }
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      placeholder="+1 (555) 000-0000"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    />
+                  </div>
+                </div>
 
-            {/* Salary */}
-            <div className="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label className="flex flex-col min-w-40 flex-1">
-                <p className="text-[#111418] text-base font-medium leading-normal pb-2">Salary</p>
-                <input
-                  placeholder="Enter salary"
-                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#111418] focus:outline-0 focus:ring-0 border border-[#dbe0e6] bg-white focus:border-[#dbe0e6] h-14 placeholder:text-[#617589] p-[15px] text-base font-normal leading-normal"
-                />
-              </label>
-            </div>
+                {/* Profile Picture */}
+                <div className="mt-6">
+                  <label
+                    htmlFor="profilePicture"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Profile Picture
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
+                      {imagePreview ? (
+                        <img
+                          src={imagePreview}
+                          alt="Profile preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <svg
+                          className="w-10 h-10 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <input
+                      onChange={handleImage}
+                      type="file"
+                      id="profilePicture"
+                      name="profilePicture"
+                      accept="image/*"
+                      className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    />
+                  </div>
+                </div>
+              </div>
 
-            {/* Email */}
-            <div className="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label className="flex flex-col min-w-40 flex-1">
-                <p className="text-[#111418] text-base font-medium leading-normal pb-2">Email</p>
-                <input
-                  placeholder="Enter email"
-                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#111418] focus:outline-0 focus:ring-0 border border-[#dbe0e6] bg-white focus:border-[#dbe0e6] h-14 placeholder:text-[#617589] p-[15px] text-base font-normal leading-normal"
-                />
-              </label>
-            </div>
+              {/* Employment Information Section */}
+              <div className="mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">
+                  Employment Information
+                </h2>
 
-            {/* Phone Number */}
-            <div className="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-              <label className="flex flex-col min-w-40 flex-1">
-                <p className="text-[#111418] text-base font-medium leading-normal pb-2">Phone Number</p>
-                <input
-                  placeholder="Enter phone number"
-                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#111418] focus:outline-0 focus:ring-0 border border-[#dbe0e6] bg-white focus:border-[#dbe0e6] h-14 placeholder:text-[#617589] p-[15px] text-base font-normal leading-normal"
-                />
-              </label>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Position */}
+                  <div>
+                    <label
+                      htmlFor="position"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Position <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      value={form.position}
+                      onChange={(e) =>
+                        setForm({ ...form, position: e.target.value })
+                      }
+                      type="text"
+                      id="position"
+                      name="position"
+                      placeholder="Software Engineer"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    />
+                  </div>
 
-            {/* Save Button */}
-            <div className="flex px-4 py-3 justify-end">
-              <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#1172d4] text-white text-sm font-bold leading-normal tracking-[0.015em]">
-                <span className="truncate">Save employee</span>
-              </button>
-            </div>
+                  {/* Department */}
+                  <div>
+                    <label
+                      htmlFor="department"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Department <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={form.departmentId}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          departmentId: Number(e.target.value),
+                        })
+                      }
+                      id="department"
+                      name="department"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-white"
+                    >
+                      <option value="">Select department</option>
+                      {departments.map((dpt) => (
+                        <option value={dpt.id} key={dpt.id}>
+                          {dpt.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Salary */}
+                  <div>
+                    <label
+                      htmlFor="salary"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Salary <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+                        $
+                      </span>
+                      <input
+                        value={form.salary}
+                        onChange={(e) =>
+                          setForm({ ...form, salary: Number(e.target.value) })
+                        }
+                        type="number"
+                        id="salary"
+                        name="salary"
+                        placeholder="50000"
+                        className="w-full pl-8 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  className="px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddEmp}
+                  type="submit"
+                  className="px-6 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition shadow-sm"
+                >
+                  Save Employee
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
