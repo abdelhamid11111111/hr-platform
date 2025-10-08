@@ -1,18 +1,97 @@
+"use client";
 import Sidebar from "@/app/components/SideBar";
+import { useState, useEffect } from "react";
+import { Employee } from "../types/type";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  LabelList,
+} from "recharts";
 
-export default function DashboardPage() {
+type DepartmentData = { name: string; value: number };
+type DeptRatingData = { department: string; avgRating: number };
+
+export default function ReportsPage() {
+  const [employee, setEmployee] = useState<Employee[]>([]);
+
+  useEffect(() => {
+    const fetchEmpData = async () => {
+      try {
+        const res = await fetch("/api/reports");
+        const data: Employee[] = await res.json();
+        setEmployee(data);
+      } catch (err) {
+        console.error("Error fetching reports:", err);
+      }
+    };
+    fetchEmpData();
+  }, []);
+
+  // ------------------- Stats -------------------
+  const totalEmp = employee.length;
+  const totalSalary = employee.reduce((acc, emp) => acc + (emp.salary || 0), 0);
+  const avgSalary = totalEmp > 0 ? totalSalary / totalEmp : 0;
+  const totalRatingValue = employee.reduce(
+    (acc, emp) => acc + (emp.review?.rating || 0),
+    0
+  );
+  const avgRating = totalEmp > 0 ? totalRatingValue / totalEmp : 0;
+  const maxSalary =
+    totalEmp > 0 ? Math.max(...employee.map((emp) => emp.salary || 0)) : 0;
+  const minSalary =
+    totalEmp > 0 ? Math.min(...employee.map((emp) => emp.salary || 0)) : 0;
+
+  // ------------------- Charts -------------------
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#A28BFE"];
+
+  // Employees by Department (Pie chart)
+  const departmentData: DepartmentData[] = Object.values(
+    employee.reduce<Record<string, DepartmentData>>((acc, emp) => {
+      const dept = emp.department?.name || "Unknown";
+      acc[dept] = acc[dept] || { name: dept, value: 0 };
+      acc[dept].value += 1;
+      return acc;
+    }, {})
+  );
+
+  // Average Rating by Department (Bar chart)
+  const deptRatingsMap: Record<string, { total: number; count: number }> = {};
+  employee.forEach((emp) => {
+    const dept = emp.department?.name || "Unknown";
+    const rating = emp.review?.rating || 0;
+    if (!deptRatingsMap[dept]) deptRatingsMap[dept] = { total: 0, count: 0 };
+    deptRatingsMap[dept].total += rating;
+    deptRatingsMap[dept].count += 1;
+  });
+
+  const deptRatingData: DeptRatingData[] = Object.keys(deptRatingsMap).map(
+    (dept) => ({
+      department: dept,
+      avgRating:
+        deptRatingsMap[dept].count > 0
+          ? deptRatingsMap[dept].total / deptRatingsMap[dept].count
+          : 0,
+    })
+  );
+
+  // ------------------- Render -------------------
   return (
     <div
-      className="relative flex h-auto min-h-screen w-full flex-col bg-white group/design-root overflow-x-hidden"
+      className="relative flex h-auto min-h-screen w-full flex-col bg-white overflow-x-hidden"
       style={{ fontFamily: 'Inter, "Noto Sans", sans-serif' }}
     >
       <div className="layout-container flex h-full grow flex-col">
         <div className="gap-1 px-6 flex flex-1 justify-center py-5">
-          {/* Sidebar */}
           <Sidebar />
 
-          {/* Main Content */}
-           <div className="flex-1 ml-80 flex flex-col px-6 py-5">
+          <div className="flex-1 ml-80 flex flex-col px-6 py-5">
             {/* Overview Header */}
             <div className="flex flex-wrap justify-between gap-3 p-4">
               <p className="text-[#111418] tracking-light text-[32px] font-bold leading-tight min-w-72">
@@ -20,160 +99,114 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            {/* Overview Stats */}
+            {/* Stats */}
             <div className="flex flex-wrap gap-4 p-4">
-              <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg p-6 bg-[#f0f2f4]">
-                <p className="text-[#111418] text-base font-medium leading-normal">
-                  Total Employees
-                </p>
-                <p className="text-[#111418] tracking-light text-2xl font-bold leading-tight">
-                  150
-                </p>
-              </div>
-              <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg p-6 bg-[#f0f2f4]">
-                <p className="text-[#111418] text-base font-medium leading-normal">
-                  Average Salary
-                </p>
-                <p className="text-[#111418] tracking-light text-2xl font-bold leading-tight">
-                  $75,000
-                </p>
-              </div>
-              <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg p-6 bg-[#f0f2f4]">
-                <p className="text-[#111418] text-base font-medium leading-normal">
-                  Highest Salary
-                </p>
-                <p className="text-[#111418] tracking-light text-2xl font-bold leading-tight">
-                  $150,000
-                </p>
-              </div>
-              <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg p-6 bg-[#f0f2f4]">
-                <p className="text-[#111418] text-base font-medium leading-normal">
-                  Lowest Salary
-                </p>
-                <p className="text-[#111418] tracking-light text-2xl font-bold leading-tight">
-                  $30,000
-                </p>
-              </div>
-              <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg p-6 bg-[#f0f2f4]">
-                <p className="text-[#111418] text-base font-medium leading-normal">
-                  Average Rating
-                </p>
-                <p className="text-[#111418] tracking-light text-2xl font-bold leading-tight">
-                  4.5
-                </p>
-              </div>
+              <StatCard title="Total Employees" value={totalEmp} />
+              <StatCard
+                title="Average Salary"
+                value={`$${avgSalary.toFixed(2)}`}
+              />
+              <StatCard title="Highest Salary" value={`$${maxSalary}`} />
+              <StatCard title="Lowest Salary" value={`$${minSalary}`} />
+              <StatCard title="Average Rating" value={avgRating.toFixed(1)} />
             </div>
 
-            {/* Performance Distribution */}
-            <h2 className="text-[#111418] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
-              Performance Distribution
-            </h2>
-            <div className="flex flex-col gap-3 p-4">
-              <div className="flex gap-6 justify-between">
-                <p className="text-[#111418] text-base font-medium leading-normal">
-                  High Performers
-                </p>
-                <p className="text-[#111418] text-sm font-normal leading-normal">
-                  75%
-                </p>
-              </div>
-              <div className="rounded bg-[#dbe0e6]">
-                <div
-                  className="h-2 rounded bg-[#111418]"
-                  style={{ width: "75%" }}
-                ></div>
-              </div>
-              <p className="text-[#617589] text-sm font-normal leading-normal">
-                Based on last quarter&apos;s reviews
-              </p>
-            </div>
+            {/* Charts */}
+            <div className="flex flex-wrap gap-8 mt-8 p-4">
+              {/* Employees by Department */}
+              <ChartCard title="Employees by Department">
+                {departmentData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={departmentData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        label
+                      >
+                        {departmentData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      {/* <Tooltip /> */}
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex justify-center items-center h-[300px] text-gray-500">
+                    No data available
+                  </div>
+                )}
+              </ChartCard>
 
-            {/* Salary Distribution */}
-            <h2 className="text-[#111418] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
-              Salary Distribution
-            </h2>
-            <div className="flex flex-col gap-3 p-4">
-              <div className="flex gap-6 justify-between">
-                <p className="text-[#111418] text-base font-medium leading-normal">
-                  Salaries above $75,000
-                </p>
-                <p className="text-[#111418] text-sm font-normal leading-normal">
-                  50%
-                </p>
-              </div>
-              <div className="rounded bg-[#dbe0e6]">
-                <div
-                  className="h-2 rounded bg-[#111418]"
-                  style={{ width: "50%" }}
-                ></div>
-              </div>
-              <p className="text-[#617589] text-sm font-normal leading-normal">
-                As of current payroll
-              </p>
-            </div>
-
-            {/* Employees by Department */}
-            <h2 className="text-[#111418] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
-              Employees by Department
-            </h2>
-            <div className="flex flex-wrap gap-4 px-4 py-6">
-              <div className="flex min-w-72 flex-1 flex-col gap-2 rounded-lg border border-[#dbe0e6] p-6">
-                <p className="text-[#111418] text-base font-medium leading-normal">
-                  Department Distribution
-                </p>
-                <p className="text-[#111418] tracking-light text-[32px] font-bold leading-tight truncate">
-                  150
-                </p>
-                <div className="flex gap-1">
-                  <p className="text-[#617589] text-base font-normal leading-normal">
-                    Total
-                  </p>
-                  <p className="text-[#078838] text-base font-medium leading-normal">
-                    +10%
-                  </p>
-                </div>
-                <div className="grid min-h-[180px] grid-flow-col gap-6 grid-rows-[1fr_auto] items-end justify-items-center px-3">
-                  <div
-                    className="border-[#617589] bg-[#f0f2f4] border-t-2 w-full"
-                    style={{ height: "50%" }}
-                  ></div>
-                  <p className="text-[#617589] text-[13px] font-bold leading-normal tracking-[0.015em]">
-                    Engineering
-                  </p>
-                  <div
-                    className="border-[#617589] bg-[#f0f2f4] border-t-2 w-full"
-                    style={{ height: "90%" }}
-                  ></div>
-                  <p className="text-[#617589] text-[13px] font-bold leading-normal tracking-[0.015em]">
-                    Marketing
-                  </p>
-                  <div
-                    className="border-[#617589] bg-[#f0f2f4] border-t-2 w-full"
-                    style={{ height: "60%" }}
-                  ></div>
-                  <p className="text-[#617589] text-[13px] font-bold leading-normal tracking-[0.015em]">
-                    Sales
-                  </p>
-                  <div
-                    className="border-[#617589] bg-[#f0f2f4] border-t-2 w-full"
-                    style={{ height: "30%" }}
-                  ></div>
-                  <p className="text-[#617589] text-[13px] font-bold leading-normal tracking-[0.015em]">
-                    HR
-                  </p>
-                  <div
-                    className="border-[#617589] bg-[#f0f2f4] border-t-2 w-full"
-                    style={{ height: "40%" }}
-                  ></div>
-                  <p className="text-[#617589] text-[13px] font-bold leading-normal tracking-[0.015em]">
-                    Finance
-                  </p>
-                </div>
-              </div>
+              {/* Average Rating by Department */}
+              <ChartCard title="Average Rating by Department">
+                {deptRatingData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart
+                      layout="vertical"
+                      data={deptRatingData}
+                      margin={{ top: 20, right: 30, left: 50, bottom: 20 }}
+                    >
+                      <XAxis type="number" domain={[0, 5]} />
+                      <YAxis type="category" dataKey="department" />
+                      {/* <Tooltip /> */}
+                      <Bar dataKey="avgRating" fill="#82ca9d">
+                        <LabelList
+                          dataKey="avgRating"
+                          position="right"
+                          formatter={(val) => {
+                            const num =
+                              typeof val === "number" ? val : Number(val);
+                            return num.toFixed(1);
+                          }}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex justify-center items-center h-[300px] text-gray-500">
+                    No data available
+                  </div>
+                )}
+              </ChartCard>
             </div>
           </div>
         </div>
-      </div>  
+      </div>
     </div>
   );
 }
+
+// ------------------- Reusable Components -------------------
+const StatCard = ({
+  title,
+  value,
+}: {
+  title: string;
+  value: string | number;
+}) => (
+  <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg p-6 bg-[#f0f2f4]">
+    <p>{title}</p>
+    <p className="text-2xl font-bold">{value}</p>
+  </div>
+);
+
+const ChartCard = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <div className="flex-1 p-4 bg-[#f0f2f4] rounded-lg">
+    <h2 className="text-xl font-bold mb-4">{title}</h2>
+    {children}
+  </div>
+);

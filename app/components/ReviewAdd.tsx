@@ -51,7 +51,7 @@ const AddReviewForm = ({onAddReview}: onAddReview) => {
       return setError('rating should be between 1 to 5')
     }
     try {
-      const res = await fetch("api/reviews", {
+      const res = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify( form ),

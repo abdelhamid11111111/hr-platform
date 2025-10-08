@@ -52,7 +52,7 @@ export default function Sidebar() {
               key={route.route} 
               href={route.route}
               >
-              <div className={`flex flex-row items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition 
+              <div className={`flex flex-row items-center hover:bg-[#f6f6f8] gap-3 px-3 py-2 rounded-lg cursor-pointer transition 
                 ${isActive(route.route) ? 'bg-[#e5e7eb]' : ''} `}>
                 <route.icon size={22} />
                 <p className="text-[#111418] text-sm font-medium">

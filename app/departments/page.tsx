@@ -1,8 +1,8 @@
 "use client";
 import Sidebar from "../components/SideBar";
 import { MdDeleteOutline } from "react-icons/md";
-import DepartmentAdd from "@/app/components/DepartementAdd";
-import DepartmentUpdate from "@/app/components/DepartementUpdate";
+import DepartmentAdd from "@/app/components/DepartmentAdd";
+import DepartmentUpdate from "@/app/components/DepartmentUpdate";
 import { useEffect, useState } from "react";
 import { Department } from "../types/type";
 

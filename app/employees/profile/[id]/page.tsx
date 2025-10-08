@@ -215,9 +215,31 @@ export default function EmployeeProfile() {
                 </div>
               </div>
             ) : (
-                <AddReviewForm/>
-            )
-        }
+              <div className="flex flex-col gap-4 px-4 pt-5">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-[#111418] text-[22px] font-bold leading-tight tracking-[-0.015em]">
+                    Performance Review
+                  </h2>
+                  <AddReviewForm
+                    onAddReview={(newReview: Review) => {
+                      setEmployee((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              review: newReview,
+                            }
+                          : prev
+                      );
+                    }}
+                  />
+                </div>
+                <div className="rounded-lg border border-[#dbe0e6] bg-white p-6">
+                  <p className="text-[#617589] text-sm">
+                    No review available yet. Add a review to get started.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
