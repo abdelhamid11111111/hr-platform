@@ -8,15 +8,19 @@ import { Department } from "../types/type";
 
 export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
+        setLoading(true);
         const res = await fetch("/api/department");
         const data = await res.json();
         setDepartments(data);
       } catch (error) {
         console.error("can not fetch department", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchDepartments();
@@ -48,10 +52,8 @@ export default function DepartmentsPage() {
     >
       <div className="layout-container flex h-full grow flex-col">
         <div className="gap-1 px-6 flex flex-1 justify-center py-5">
-          {/* Sidebar placeholder */}
           <Sidebar />
 
-          {/* Main content */}
           <div className="flex-1 ml-80 flex flex-col px-6 py-5">
             <div className="flex flex-wrap justify-between gap-3 p-4">
               <p className="text-[#111418] tracking-light text-[32px] font-bold leading-tight min-w-72">
@@ -64,7 +66,6 @@ export default function DepartmentsPage() {
               />
             </div>
 
-            {/* Table */}
             <div className="px-4 py-3 @container">
               <div className="flex overflow-hidden rounded-lg border border-[#dbe0e6] bg-white">
                 <table className="flex-1">
@@ -85,34 +86,67 @@ export default function DepartmentsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {departments.map((dept) => (
-                      <tr key={dept.id} className="border-t border-t-[#dbe0e6]">
-                        <td className="table-column-120 h-[72px] px-4 py-2 w-[400px] text-[#111418] text-sm font-normal leading-normal">
-                          {dept.name}
-                        </td>
-                        <td className="table-column-240 h-[72px] px-4 py-2 w-[400px] text-[#617589] text-sm font-normal leading-normal">
-                          {new Date(dept.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="table-column-360 h-[72px] px-4 py-2 w-[400px] text-[#617589] text-sm font-normal leading-normal">
-                          {dept.location}
-                        </td>
-
-                        <td className="px-4 py-2 text-[#617589] text-sm font-bold">
-                          <div className="flex items-center gap-2">
-                            <DepartmentUpdate 
-                              departmentId={dept.id} 
-                              updateDepartment={updateDepartment}
-                            />
-                            <button 
-                              onClick={() => handleDelete(dept.id)}
-                              className="inline-flex cursor-pointer items-center text-sm px-3 py-1.5 font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 hover:border-red-300 outline-none  transition-all duration-150">
-                              <MdDeleteOutline size={20} />
-                              Delete
-                            </button>
+                    {loading ? (
+                      // Loading skeleton rows
+                      Array.from({ length: 5 }).map((_, index) => (
+                        <tr key={index} className="border-t border-t-[#dbe0e6] animate-pulse">
+                          <td className="table-column-120 h-[72px] px-4 py-2 w-[400px]">
+                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                          </td>
+                          <td className="table-column-240 h-[72px] px-4 py-2 w-[400px]">
+                            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                          </td>
+                          <td className="table-column-360 h-[72px] px-4 py-2 w-[400px]">
+                            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                          </td>
+                          <td className="table-column-480 px-4 py-2">
+                            <div className="flex items-center gap-2">
+                              <div className="h-8 bg-gray-200 rounded w-16"></div>
+                              <div className="h-8 bg-gray-200 rounded w-20"></div>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : departments.length === 0 ? (
+                      // Empty state
+                      <tr>
+                        <td colSpan={4} className="h-[200px] text-center text-[#617589]">
+                          <div className="flex flex-col items-center justify-center">
+                            <p className="text-lg font-medium">No departments found</p>
+                            <p className="text-sm mt-1">Add a new department to get started</p>
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      // Actual data
+                      departments.map((dept) => (
+                        <tr key={dept.id} className="border-t border-t-[#dbe0e6]">
+                          <td className="table-column-120 h-[72px] px-4 py-2 w-[400px] text-[#111418] text-sm font-normal leading-normal">
+                            {dept.name}
+                          </td>
+                          <td className="table-column-240 h-[72px] px-4 py-2 w-[400px] text-[#617589] text-sm font-normal leading-normal">
+                            {new Date(dept.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="table-column-360 h-[72px] px-4 py-2 w-[400px] text-[#617589] text-sm font-normal leading-normal">
+                            {dept.location}
+                          </td>
+                          <td className="px-4 py-2 text-[#617589] text-sm font-bold">
+                            <div className="flex items-center gap-2">
+                              <DepartmentUpdate 
+                                departmentId={dept.id} 
+                                updateDepartment={updateDepartment}
+                              />
+                              <button 
+                                onClick={() => handleDelete(dept.id)}
+                                className="inline-flex cursor-pointer items-center text-sm px-3 py-1.5 font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 hover:border-red-300 outline-none transition-all duration-150">
+                                <MdDeleteOutline size={20} />
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

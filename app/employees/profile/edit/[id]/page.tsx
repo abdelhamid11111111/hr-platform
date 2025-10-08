@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import Sidebar from "../../components/SideBar";
+import Sidebar from "../../../../components/SideBar";
 import { DptInEmpForm } from "@/app/types/type";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -94,7 +94,7 @@ export default function EditEmployeePage() {
       });
       const data = await res.json();
       if (res.ok) {
-        router.push("/employees");
+        router.push(`/employees/profile/${id}`);
       } else {
         setError(data.error);
       }
@@ -376,7 +376,7 @@ export default function EditEmployeePage() {
 
               {/* Action Buttons */}
               <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
-                <Link href={"/employees"}>
+                <Link href={`/employees/profile/${id}`}>
                   <button
                     type="button"
                     className="px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition"

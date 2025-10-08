@@ -40,7 +40,6 @@ model Employee {
 model Review {
   id         Int      @id @default(autoincrement())
   rating     Float
-  date       DateTime @default(now())
   notes      String
   employeeId Int      @unique
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)

@@ -7,14 +7,14 @@ export async function saveFile(file: File): Promise<string> {
   const bytes = await file.arrayBuffer();
 
   // convert file from binary form to be node js friendly
-  const buffer = Buffer.from(bytes);
+  const buffer = Buffer.from(bytes);                                //   <---     prepare file
   
   // Generate unique filename
   const timestamp = Date.now();
-  const filename = `${timestamp}-${file.name}`;
+  const filename = `${timestamp}-${file.name}`;                     //   <---     prepare file-name
 
   // creates a path string for the file
-  const path = join(process.cwd(), 'public/uploads', filename); 
+  const path = join(process.cwd(), 'public/uploads', filename);     //   <---     prepare path
   
   // Save the file
   await writeFile(path, buffer);

@@ -57,3 +57,21 @@ export async function POST(req: Request){
         return NextResponse.json({error: 'server error POST'}, {status: 500})
     }
 }
+
+
+export async function GET(){
+    try{
+        const displayEmps = await prisma.employee.findMany({
+            orderBy: {
+                id: 'desc'
+            }, 
+            include: {
+                department: true
+            }
+        })
+        return NextResponse.json(displayEmps, {status: 200})
+    } catch(error){
+        console.error('server error', error);
+        return NextResponse.json({error: 'server error GET'}, {status: 500})
+    }
+}
